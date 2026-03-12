@@ -20,6 +20,7 @@ jobs:
       - name: Onboard Kepler API
         uses: postman-cs/postman-api-onboarding-action@v0
         with:
+          workspace-id: d53c8836-d6f8-48b4-b0eb-109423ad1d94
           project-name: kepler-api
           domain: cs-infrastructure
           domain-code: KEP

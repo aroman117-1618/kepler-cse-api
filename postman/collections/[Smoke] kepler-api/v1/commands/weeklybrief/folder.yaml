@@ -1,0 +1,4 @@
+type: folder
+name: weeklybrief
+items:
+  - ref: ./Generate weekly brief.request.yaml

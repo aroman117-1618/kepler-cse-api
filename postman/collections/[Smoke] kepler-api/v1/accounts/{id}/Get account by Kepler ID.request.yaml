@@ -1,0 +1,68 @@
+type: http
+name: Get account by Kepler ID
+url: '{{baseUrl}}/v1/accounts/:id'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: id
+    value: string
+    description: Kepler account identifier
+scripts:
+  - type: afterResponse
+    code:
+      - // [Smoke] Auto-generated test assertions
+      - pm.test('Status code is successful (2xx)', function () {
+      - '    pm.response.to.be.success;'
+      - '});'
+      - pm.test('Response time is acceptable', function () {
+      - '    var threshold = parseInt(pm.environment.get(''RESPONSE_TIME_THRESHOLD'') || ''2000'', 10);'
+      - '    pm.expect(pm.response.responseTime).to.be.below(threshold);'
+      - '});'
+      - pm.test('Response body is not empty', function () {
+      - '    if (pm.response.code !== 204) {'
+      - '        var body = pm.response.text();'
+      - '        pm.expect(body.length).to.be.above(0);'
+      - '    }'
+      - '});'
+    language: text/javascript
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "id": "string",
+            "name": "string",
+            "salesforceId": "string",
+            "arr": 8302.226988014978,
+            "pipelineArr": 159.34608467180533,
+            "csm": "string",
+            "ae": "string",
+            "createdAt": "1966-07-17T05:01:05.577Z",
+            "updatedAt": "1965-07-27T18:40:54.844Z"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Account details
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: json
+        content: |-
+          {
+            "code": "string",
+            "message": "string",
+            "details": {
+              "key_0": "string"
+            }
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Account not found

@@ -1,0 +1,5 @@
+type: folder
+name: '{id}'
+items:
+  - ref: ./communications/folder.yaml
+  - ref: ./Get account by Kepler ID.request.yaml

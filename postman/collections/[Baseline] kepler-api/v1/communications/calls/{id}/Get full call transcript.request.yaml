@@ -1,0 +1,62 @@
+type: http
+name: Get full call transcript
+url: '{{baseUrl}}/v1/communications/calls/:id'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: id
+    value: string
+    description: Gong call identifier
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "id": "string",
+            "subject": "string",
+            "direction": "outbound",
+            "duration": 3770,
+            "timestamp": "1986-05-14T06:10:40.462Z",
+            "participants": [
+              {
+                "name": "string",
+                "email": "B7p5fS@gviMJ.ai",
+                "role": "string"
+              },
+              {
+                "name": "string",
+                "email": "dxz@CRaVRzsXoceosMRklHZrs.hrg",
+                "role": "string"
+              }
+            ],
+            "transcript": [
+              {
+                "speaker": "string",
+                "text": "string",
+                "startTime": 2617.4614623164416,
+                "endTime": 8436.907619462112
+              },
+              {
+                "speaker": "string",
+                "text": "string",
+                "startTime": 8491.662442598586,
+                "endTime": 7294.909251498228
+              }
+            ]
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Call transcript
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: text
+        content: ''
+    name: Call not found

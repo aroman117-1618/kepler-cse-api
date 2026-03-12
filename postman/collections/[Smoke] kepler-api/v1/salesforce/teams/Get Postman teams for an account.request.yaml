@@ -1,0 +1,67 @@
+type: http
+name: Get Postman teams for an account
+url: '{{baseUrl}}/v1/salesforce/teams?account_ids=string'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+queryParams:
+  - key: account_ids
+    value: string
+    description: Comma-separated Salesforce account IDs
+scripts:
+  - type: afterResponse
+    code:
+      - // [Smoke] Auto-generated test assertions
+      - pm.test('Status code is successful (2xx)', function () {
+      - '    pm.response.to.be.success;'
+      - '});'
+      - pm.test('Response time is acceptable', function () {
+      - '    var threshold = parseInt(pm.environment.get(''RESPONSE_TIME_THRESHOLD'') || ''2000'', 10);'
+      - '    pm.expect(pm.response.responseTime).to.be.below(threshold);'
+      - '});'
+      - pm.test('Response body is not empty', function () {
+      - '    if (pm.response.code !== 204) {'
+      - '        var body = pm.response.text();'
+      - '        pm.expect(body.length).to.be.above(0);'
+      - '    }'
+      - '});'
+    language: text/javascript
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "data": [
+              {
+                "teamId": "string",
+                "teamName": "string",
+                "plan": "string",
+                "licensePurchased": 2195,
+                "licenseUsed": 6736,
+                "occupancyPercent": 1107.070525371765,
+                "renewalDate": "2013-11-02",
+                "autoRenew": true,
+                "teamArr": 667.073115742698
+              },
+              {
+                "teamId": "string",
+                "teamName": "string",
+                "plan": "string",
+                "licensePurchased": 4961,
+                "licenseUsed": 5884,
+                "occupancyPercent": 2229.7358131024826,
+                "renewalDate": "1970-08-25",
+                "autoRenew": false,
+                "teamArr": 8075.4236313994525
+              }
+            ],
+            "accountId": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Team data

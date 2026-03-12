@@ -1,0 +1,49 @@
+type: http
+name: Get Postman teams for an account
+url: '{{baseUrl}}/v1/salesforce/teams?account_ids=string'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+queryParams:
+  - key: account_ids
+    value: string
+    description: Comma-separated Salesforce account IDs
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "data": [
+              {
+                "teamId": "string",
+                "teamName": "string",
+                "plan": "string",
+                "licensePurchased": 9776,
+                "licenseUsed": 3359,
+                "occupancyPercent": 5197.432362930703,
+                "renewalDate": "2021-01-21",
+                "autoRenew": false,
+                "teamArr": 1016.3880315979012
+              },
+              {
+                "teamId": "string",
+                "teamName": "string",
+                "plan": "string",
+                "licensePurchased": 5767,
+                "licenseUsed": 7744,
+                "occupancyPercent": 5782.679109038524,
+                "renewalDate": "1957-05-19",
+                "autoRenew": true,
+                "teamArr": 1269.7573055274459
+              }
+            ],
+            "accountId": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Team data

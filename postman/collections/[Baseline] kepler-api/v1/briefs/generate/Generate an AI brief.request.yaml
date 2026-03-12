@@ -1,0 +1,42 @@
+type: http
+name: Generate an AI brief
+url: '{{baseUrl}}/v1/briefs/generate'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "accountId": "string",
+      "briefType": "executive",
+      "includeCommunications": true,
+      "lookbackDays": 90
+    }
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "accountId": "string",
+            "briefType": "string",
+            "generatedAt": "2013-01-20T20:34:40.220Z",
+            "content": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Generated brief
+  - response:
+      statusCode: 400
+      statusText: Bad Request
+      body:
+        type: text
+        content: ''
+    name: Invalid request

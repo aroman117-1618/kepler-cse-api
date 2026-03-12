@@ -1,0 +1,5 @@
+type: folder
+name: accounts
+items:
+  - ref: ./{id}/folder.yaml
+  - ref: ./search/folder.yaml

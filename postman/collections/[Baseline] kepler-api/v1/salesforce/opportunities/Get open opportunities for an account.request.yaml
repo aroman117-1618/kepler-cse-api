@@ -1,0 +1,45 @@
+type: http
+name: Get open opportunities for an account
+url: '{{baseUrl}}/v1/salesforce/opportunities?account_id=string'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+queryParams:
+  - key: account_id
+    value: string
+    description: Salesforce account ID
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "data": [
+              {
+                "id": "string",
+                "name": "string",
+                "stage": "string",
+                "amount": 6597.317749455531,
+                "closeDate": "1960-02-16",
+                "type": "string",
+                "probability": 5294.415394158187
+              },
+              {
+                "id": "string",
+                "name": "string",
+                "stage": "string",
+                "amount": 8337.882245368122,
+                "closeDate": "2003-09-06",
+                "type": "string",
+                "probability": 7307.435879138524
+              }
+            ],
+            "accountId": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Opportunities list

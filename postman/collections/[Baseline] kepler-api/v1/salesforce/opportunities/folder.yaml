@@ -1,0 +1,4 @@
+type: folder
+name: opportunities
+items:
+  - ref: ./Get open opportunities for an account.request.yaml

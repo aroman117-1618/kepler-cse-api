@@ -1,0 +1,28 @@
+type: http
+name: Service health check
+url: '{{baseUrl}}/v1/health'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "status": "healthy",
+            "version": "string",
+            "uptime": "string",
+            "dependencies": {
+              "salesforce": "disconnected",
+              "gong": "degraded",
+              "llm": "disconnected"
+            }
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Service is healthy

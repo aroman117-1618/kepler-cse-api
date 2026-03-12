@@ -1,0 +1,48 @@
+$schema: https://schema.postman.com/json/draft-2020-12/collection/v3.0.0/
+type: collection
+name: '[Contract] kepler-api'
+description: |-
+  Pre-aggregation API layer that normalizes and aggregates data from Salesforce (SFDC)
+  and Gong into a unified REST surface for downstream CS tooling and automation pipelines.
+
+  Kepler sits between upstream data sources (Salesforce, Gong) and downstream consumers
+  (hybrid-cs-hq agent pipelines, scheduled data fetchers). Instead of each tool hitting
+  SFDC and Gong APIs directly, Kepler provides a single authenticated API surface with
+  consistent data models.
+
+  **Authentication:**
+  - Service-to-service: OAuth 2.0 Client Credentials flow
+  - Endpoint: `POST /v1/auth/service-token` with `client_id` + `client_secret`
+  - Returns Bearer token with 1-hour TTL
+  - No refresh tokens — each auth call issues a new token
+
+  **Rate Limits:**
+  - 100 requests/minute per authenticated client
+
+  **API Scopes:**
+  - `kepler:accounts:read` / `kepler:accounts:write`
+  - `kepler:salesforce:read`
+  - `kepler:communications:read` / `kepler:communications:write`
+  - `kepler:briefs:read` / `kepler:briefs:write`
+  - `kepler:health:read`
+  - `kepler:quality:read`
+  - `kepler:impact:read`
+  - `kepler:knowledge:read`
+
+
+  Contact Support:
+   Name: CS Engineering
+   Email: cs-engineering@postman.com
+id: 878be952-7be9-40a7-9f18-8f214a83e0a9
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{bearerToken}}'
+      type: string
+variables:
+  - key: baseUrl
+    value: https://api.kepler.rip
+items:
+  - ref: ./v1/folder.yaml
+  - ref: ./00 - Resolve Secrets.request.yaml

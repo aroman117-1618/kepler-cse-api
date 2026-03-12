@@ -1,0 +1,77 @@
+type: http
+name: Get account communications summary
+url: '{{baseUrl}}/v1/accounts/:id/communications?days=90'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+queryParams:
+  - key: days
+    value: '90'
+    description: Lookback window in days (default 90)
+pathVariables:
+  - key: id
+    value: string
+    description: Kepler account identifier
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "accountId": "string",
+            "periodDays": 7809,
+            "calls": [
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "inbound",
+                "duration": 9656,
+                "timestamp": "1986-02-09T15:55:04.389Z",
+                "participants": [
+                  "string",
+                  "string"
+                ]
+              },
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "outbound",
+                "duration": 2545,
+                "timestamp": "1961-06-28T18:50:14.323Z",
+                "participants": [
+                  "string",
+                  "string"
+                ]
+              }
+            ],
+            "emails": [
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "inbound",
+                "sender": "string",
+                "sentDate": "1989-01-26T06:02:56.140Z"
+              },
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "outbound",
+                "sender": "string",
+                "sentDate": "1973-08-31T19:25:08.902Z"
+              }
+            ]
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Communications summary
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: text
+        content: ''
+    name: Account not found

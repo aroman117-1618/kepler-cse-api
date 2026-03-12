@@ -1,0 +1,4 @@
+type: folder
+name: teams
+items:
+  - ref: ./Get Postman teams for an account.request.yaml

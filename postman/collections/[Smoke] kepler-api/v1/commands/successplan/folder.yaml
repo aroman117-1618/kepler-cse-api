@@ -1,0 +1,4 @@
+type: folder
+name: successplan
+items:
+  - ref: ./Generate success plan.request.yaml

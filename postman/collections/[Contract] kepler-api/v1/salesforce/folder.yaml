@@ -1,0 +1,6 @@
+type: folder
+name: salesforce
+items:
+  - ref: ./accounts/folder.yaml
+  - ref: ./teams/folder.yaml
+  - ref: ./opportunities/folder.yaml

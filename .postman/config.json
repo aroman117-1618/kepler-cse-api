@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "workspace": {
+    "id": "d53c8836-d6f8-48b4-b0eb-109423ad1d94"
+  },
+  "collectionPaths": [
+    "postman/collections/"
+  ],
+  "environmentPaths": [
+    "postman/environments/"
+  ],
+  "mockPaths": [
+    "postman/mocks/"
+  ]
+}

@@ -1,0 +1,39 @@
+type: http
+name: Get SFDC account by ID
+url: '{{baseUrl}}/v1/salesforce/accounts/:id'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: id
+    value: string
+    description: Salesforce account ID
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "id": "string",
+            "name": "string",
+            "arr": 2027.7343887758125,
+            "pipelineArr": 1202.1017125063627,
+            "csm": "string",
+            "ae": "string",
+            "industry": "string",
+            "tier": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: SFDC account data
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: text
+        content: ''
+    name: Account not found

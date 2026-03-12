@@ -1,0 +1,4 @@
+type: folder
+name: '{id}'
+items:
+  - ref: ./Get full email body.request.yaml

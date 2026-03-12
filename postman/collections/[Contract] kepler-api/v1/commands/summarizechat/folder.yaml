@@ -1,0 +1,4 @@
+type: folder
+name: summarizechat
+items:
+  - ref: ./Summarize chat interaction.request.yaml

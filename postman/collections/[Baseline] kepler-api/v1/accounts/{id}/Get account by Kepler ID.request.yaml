@@ -1,0 +1,52 @@
+type: http
+name: Get account by Kepler ID
+url: '{{baseUrl}}/v1/accounts/:id'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: id
+    value: string
+    description: Kepler account identifier
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "id": "string",
+            "name": "string",
+            "salesforceId": "string",
+            "arr": 3564.0155563639487,
+            "pipelineArr": 3424.9784548652883,
+            "csm": "string",
+            "ae": "string",
+            "createdAt": "1967-12-12T21:20:54.833Z",
+            "updatedAt": "1993-05-24T13:52:32.531Z"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Account details
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: json
+        content: |-
+          {
+            "code": "string",
+            "message": "string",
+            "details": {
+              "key_0": 9503,
+              "key_1": 8328,
+              "key_2": "string"
+            }
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Account not found

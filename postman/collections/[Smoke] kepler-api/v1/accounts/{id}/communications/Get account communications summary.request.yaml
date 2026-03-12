@@ -1,0 +1,95 @@
+type: http
+name: Get account communications summary
+url: '{{baseUrl}}/v1/accounts/:id/communications?days=90'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+queryParams:
+  - key: days
+    value: '90'
+    description: Lookback window in days (default 90)
+pathVariables:
+  - key: id
+    value: string
+    description: Kepler account identifier
+scripts:
+  - type: afterResponse
+    code:
+      - // [Smoke] Auto-generated test assertions
+      - pm.test('Status code is successful (2xx)', function () {
+      - '    pm.response.to.be.success;'
+      - '});'
+      - pm.test('Response time is acceptable', function () {
+      - '    var threshold = parseInt(pm.environment.get(''RESPONSE_TIME_THRESHOLD'') || ''2000'', 10);'
+      - '    pm.expect(pm.response.responseTime).to.be.below(threshold);'
+      - '});'
+      - pm.test('Response body is not empty', function () {
+      - '    if (pm.response.code !== 204) {'
+      - '        var body = pm.response.text();'
+      - '        pm.expect(body.length).to.be.above(0);'
+      - '    }'
+      - '});'
+    language: text/javascript
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "accountId": "string",
+            "periodDays": 3619,
+            "calls": [
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "outbound",
+                "duration": 8743,
+                "timestamp": "1986-07-18T19:58:28.586Z",
+                "participants": [
+                  "string",
+                  "string"
+                ]
+              },
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "outbound",
+                "duration": 8939,
+                "timestamp": "1987-08-24T19:39:27.236Z",
+                "participants": [
+                  "string",
+                  "string"
+                ]
+              }
+            ],
+            "emails": [
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "inbound",
+                "sender": "string",
+                "sentDate": "1996-01-02T17:54:43.197Z"
+              },
+              {
+                "id": "string",
+                "subject": "string",
+                "direction": "outbound",
+                "sender": "string",
+                "sentDate": "2014-12-16T08:39:02.110Z"
+              }
+            ]
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Communications summary
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: text
+        content: ''
+    name: Account not found

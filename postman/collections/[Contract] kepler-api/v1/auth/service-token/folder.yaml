@@ -1,0 +1,4 @@
+type: folder
+name: service-token
+items:
+  - ref: ./Acquire a service token.request.yaml

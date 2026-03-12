@@ -1,0 +1,4 @@
+type: folder
+name: communications
+items:
+  - ref: ./Get account communications summary.request.yaml

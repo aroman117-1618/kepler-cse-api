@@ -1,0 +1,5 @@
+type: folder
+name: communications
+items:
+  - ref: ./calls/folder.yaml
+  - ref: ./emails/folder.yaml

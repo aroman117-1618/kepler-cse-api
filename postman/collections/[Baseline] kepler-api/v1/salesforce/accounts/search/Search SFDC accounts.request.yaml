@@ -1,0 +1,50 @@
+type: http
+name: Search SFDC accounts
+url: '{{baseUrl}}/v1/salesforce/accounts/search?q=string&limit=10'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+queryParams:
+  - key: q
+    value: string
+    description: Search query (account name, partial match supported)
+  - key: limit
+    value: '10'
+    description: Maximum results to return
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "data": [
+              {
+                "id": "string",
+                "name": "string",
+                "arr": 7606.825812126414,
+                "pipelineArr": 4563.4826823200765,
+                "csm": "string",
+                "ae": "string",
+                "industry": "string",
+                "tier": "string"
+              },
+              {
+                "id": "string",
+                "name": "string",
+                "arr": 651.5062483535572,
+                "pipelineArr": 7541.774716542973,
+                "csm": "string",
+                "ae": "string",
+                "industry": "string",
+                "tier": "string"
+              }
+            ],
+            "total": 8112
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Search results

@@ -1,0 +1,7 @@
+type: folder
+name: commands
+items:
+  - ref: ./outreachplan/folder.yaml
+  - ref: ./successplan/folder.yaml
+  - ref: ./weeklybrief/folder.yaml
+  - ref: ./summarizechat/folder.yaml

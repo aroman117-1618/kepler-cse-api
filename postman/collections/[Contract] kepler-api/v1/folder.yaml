@@ -1,0 +1,10 @@
+type: folder
+name: v1
+items:
+  - ref: ./auth/folder.yaml
+  - ref: ./accounts/folder.yaml
+  - ref: ./salesforce/folder.yaml
+  - ref: ./communications/folder.yaml
+  - ref: ./briefs/folder.yaml
+  - ref: ./commands/folder.yaml
+  - ref: ./health/folder.yaml

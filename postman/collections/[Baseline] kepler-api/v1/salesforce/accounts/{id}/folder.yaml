@@ -1,0 +1,4 @@
+type: folder
+name: '{id}'
+items:
+  - ref: ./Get SFDC account by ID.request.yaml

@@ -1,0 +1,52 @@
+type: http
+name: Acquire a service token
+url: '{{baseUrl}}/v1/auth/service-token'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "client_id": "kepler-cs-pipeline",
+      "client_secret": "secret_xxxxxxxxxxxxx"
+    }
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "access_token": "string",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": "kepler:accounts:read kepler:salesforce:read kepler:communications:read"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Token issued successfully
+  - response:
+      statusCode: 401
+      statusText: Unauthorized
+      body:
+        type: json
+        content: |-
+          {
+            "code": "string",
+            "message": "string",
+            "details": {
+              "key_0": 9503,
+              "key_1": 8328,
+              "key_2": "string"
+            }
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Invalid credentials

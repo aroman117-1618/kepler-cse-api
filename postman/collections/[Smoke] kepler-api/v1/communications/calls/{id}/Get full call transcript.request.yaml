@@ -1,0 +1,80 @@
+type: http
+name: Get full call transcript
+url: '{{baseUrl}}/v1/communications/calls/:id'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: id
+    value: string
+    description: Gong call identifier
+scripts:
+  - type: afterResponse
+    code:
+      - // [Smoke] Auto-generated test assertions
+      - pm.test('Status code is successful (2xx)', function () {
+      - '    pm.response.to.be.success;'
+      - '});'
+      - pm.test('Response time is acceptable', function () {
+      - '    var threshold = parseInt(pm.environment.get(''RESPONSE_TIME_THRESHOLD'') || ''2000'', 10);'
+      - '    pm.expect(pm.response.responseTime).to.be.below(threshold);'
+      - '});'
+      - pm.test('Response body is not empty', function () {
+      - '    if (pm.response.code !== 204) {'
+      - '        var body = pm.response.text();'
+      - '        pm.expect(body.length).to.be.above(0);'
+      - '    }'
+      - '});'
+    language: text/javascript
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "id": "string",
+            "subject": "string",
+            "direction": "inbound",
+            "duration": 3812,
+            "timestamp": "2017-04-17T07:14:20.760Z",
+            "participants": [
+              {
+                "name": "string",
+                "email": "igDLsAtBMP0@eHeelvIGGNmdX.xwaw",
+                "role": "string"
+              },
+              {
+                "name": "string",
+                "email": "FMxWIXhCKzC@LMhXcdjz.lj",
+                "role": "string"
+              }
+            ],
+            "transcript": [
+              {
+                "speaker": "string",
+                "text": "string",
+                "startTime": 1336.3719808249218,
+                "endTime": 4250.6767876423355
+              },
+              {
+                "speaker": "string",
+                "text": "string",
+                "startTime": 4235.801330133327,
+                "endTime": 522.0926801749525
+              }
+            ]
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Call transcript
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: text
+        content: ''
+    name: Call not found

@@ -1,0 +1,47 @@
+type: http
+name: Get full email body
+url: '{{baseUrl}}/v1/communications/emails/:id'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: id
+    value: string
+    description: Gong email identifier
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "id": "string",
+            "subject": "string",
+            "direction": "outbound",
+            "sender": "kpB3Vq2X@KDaAOpweSARKjr.wqw",
+            "recipients": [
+              {
+                "email": "DWm28hbsBqZk@AjNakO.lvre",
+                "type": "bcc"
+              },
+              {
+                "email": "XJcdUe@zKXpp.gz",
+                "type": "cc"
+              }
+            ],
+            "sentDate": "1995-09-28T19:01:17.883Z",
+            "body": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Email detail
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: text
+        content: ''
+    name: Email not found

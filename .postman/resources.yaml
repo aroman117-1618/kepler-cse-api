@@ -1,0 +1,10 @@
+workspace:
+  id: d53c8836-d6f8-48b4-b0eb-109423ad1d94
+cloudResources:
+  collections:
+    ../postman/collections/[Baseline] kepler-api: 49024586-51319b4c-7b5f-4f07-8c70-178296ed523c
+    ../postman/collections/[Smoke] kepler-api: 49024586-0d254550-4088-42af-ac53-592e08fb2b78
+    ../postman/collections/[Contract] kepler-api: 49024586-878be952-7be9-40a7-9f18-8f214a83e0a9
+localResources:
+  specs:
+    - ../index.yaml

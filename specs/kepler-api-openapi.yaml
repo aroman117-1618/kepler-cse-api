@@ -1,0 +1,899 @@
+openapi: 3.0.3
+info:
+  title: Kepler API - CS Data Aggregation Service
+  description: |
+    Pre-aggregation API layer that normalizes and aggregates data from Salesforce (SFDC)
+    and Gong into a unified REST surface for downstream CS tooling and automation pipelines.
+
+    Kepler sits between upstream data sources (Salesforce, Gong) and downstream consumers
+    (hybrid-cs-hq agent pipelines, scheduled data fetchers). Instead of each tool hitting
+    SFDC and Gong APIs directly, Kepler provides a single authenticated API surface with
+    consistent data models.
+
+    **Authentication:**
+    - Service-to-service: OAuth 2.0 Client Credentials flow
+    - Endpoint: `POST /v1/auth/service-token` with `client_id` + `client_secret`
+    - Returns Bearer token with 1-hour TTL
+    - No refresh tokens — each auth call issues a new token
+
+    **Rate Limits:**
+    - 100 requests/minute per authenticated client
+
+    **API Scopes:**
+    - `kepler:accounts:read` / `kepler:accounts:write`
+    - `kepler:salesforce:read`
+    - `kepler:communications:read` / `kepler:communications:write`
+    - `kepler:briefs:read` / `kepler:briefs:write`
+    - `kepler:health:read`
+    - `kepler:quality:read`
+    - `kepler:impact:read`
+    - `kepler:knowledge:read`
+  version: 1.0.0
+  contact:
+    name: CS Engineering
+    email: cs-engineering@postman.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.kepler.rip
+    description: Production environment
+
+tags:
+  - name: Authentication
+    description: Service token acquisition via OAuth 2.0 client credentials
+  - name: Accounts
+    description: Kepler account lookup and search (aggregated from SFDC)
+  - name: Salesforce Accounts
+    description: Direct SFDC account data — ARR, CSM/AE assignments, pipeline
+  - name: Salesforce Teams
+    description: Postman team plan data — licenses, occupancy, renewal dates
+  - name: Salesforce Opportunities
+    description: Open opportunities with stage, amount, close date
+  - name: Communications
+    description: Gong call summaries and email summaries by account
+  - name: Call Detail
+    description: Full call transcripts with speaker attribution
+  - name: Email Detail
+    description: Full email bodies with recipients
+  - name: Briefs
+    description: AI-generated brief generation (server-side LLM)
+  - name: Commands
+    description: AI-generated command outputs — outreach plans, success plans, weekly briefs
+  - name: Health
+    description: Service health and readiness checks
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ── Authentication ──────────────────────────────────────────────
+  /v1/auth/service-token:
+    post:
+      tags:
+        - Authentication
+      summary: Acquire a service token
+      description: |
+        OAuth 2.0 client credentials exchange. Returns a Bearer token valid for 1 hour.
+        No refresh tokens are issued — clients must re-authenticate when the token expires.
+
+        Credentials are typically stored in macOS Keychain as `HybridCS-Kepler` or
+        via environment variables `KEPLER_CLIENT_ID` / `KEPLER_CLIENT_SECRET`.
+      operationId: acquireServiceToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceTokenRequest'
+            examples:
+              standard:
+                summary: Standard client credentials exchange
+                value:
+                  client_id: "kepler-cs-pipeline"
+                  client_secret: "secret_xxxxxxxxxxxxx"
+      responses:
+        '200':
+          description: Token issued successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceTokenResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ── Accounts (Kepler-level) ─────────────────────────────────────
+  /v1/accounts/{id}:
+    get:
+      tags:
+        - Accounts
+      summary: Get account by Kepler ID
+      description: Returns aggregated account data including SFDC fields and Kepler metadata.
+      operationId: getAccount
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Kepler account identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /v1/accounts/{id}/communications:
+    get:
+      tags:
+        - Communications
+      summary: Get account communications summary
+      description: |
+        Returns call summaries and email summaries for an account within the specified
+        lookback window. Used by the CS pipeline's comms-only mode.
+      operationId: getAccountCommunications
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Kepler account identifier
+          schema:
+            type: string
+        - name: days
+          in: query
+          description: Lookback window in days (default 90)
+          schema:
+            type: integer
+            default: 90
+            minimum: 1
+            maximum: 365
+      responses:
+        '200':
+          description: Communications summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommunicationsSummary'
+        '404':
+          description: Account not found
+
+  # ── Salesforce Accounts ─────────────────────────────────────────
+  /v1/salesforce/accounts/{id}:
+    get:
+      tags:
+        - Salesforce Accounts
+      summary: Get SFDC account by ID
+      description: |
+        Returns raw Salesforce account data including account name, ARR,
+        CSM/AE assignments, and pipeline ARR.
+      operationId: getSalesforceAccount
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Salesforce account ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SFDC account data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesforceAccount'
+        '404':
+          description: Account not found
+
+  /v1/salesforce/accounts/search:
+    get:
+      tags:
+        - Salesforce Accounts
+      summary: Search SFDC accounts
+      description: |
+        Search Salesforce accounts by name or other criteria. Used by the pipeline's
+        single-customer ad-hoc mode (`--customer "Name"`) to resolve account names
+        to Salesforce IDs.
+      operationId: searchSalesforceAccounts
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query (account name, partial match supported)
+          schema:
+            type: string
+            minLength: 2
+        - name: limit
+          in: query
+          description: Maximum results to return
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesforceAccountList'
+
+  # ── Salesforce Teams ────────────────────────────────────────────
+  /v1/salesforce/teams:
+    get:
+      tags:
+        - Salesforce Teams
+      summary: Get Postman teams for an account
+      description: |
+        Returns Postman team plan data associated with a Salesforce account:
+        licenses (purchased/used), occupancy percentage, renewal dates,
+        auto-renew status, and per-team ARR.
+      operationId: getSalesforceTeams
+      parameters:
+        - name: account_ids
+          in: query
+          required: true
+          description: Comma-separated Salesforce account IDs
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Team data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalesforceTeamList'
+
+  # ── Salesforce Opportunities ────────────────────────────────────
+  /v1/salesforce/opportunities:
+    get:
+      tags:
+        - Salesforce Opportunities
+      summary: Get open opportunities for an account
+      description: Returns open Salesforce opportunities with stage, amount, close date, and type.
+      operationId: getSalesforceOpportunities
+      parameters:
+        - name: account_id
+          in: query
+          required: true
+          description: Salesforce account ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Opportunities list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunityList'
+
+  # ── Communication Detail ────────────────────────────────────────
+  /v1/communications/calls/{id}:
+    get:
+      tags:
+        - Call Detail
+      summary: Get full call transcript
+      description: |
+        Returns the full verbatim call transcript with speaker attribution,
+        participants, and duration. Sourced from Gong.
+
+        Downstream consumers enrich transcripts locally with executive summaries,
+        SPIN analysis, key insights, and action items.
+      operationId: getCallTranscript
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Gong call identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Call transcript
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CallTranscript'
+        '404':
+          description: Call not found
+
+  /v1/communications/emails/{id}:
+    get:
+      tags:
+        - Email Detail
+      summary: Get full email body
+      description: Returns the full email body with recipients, sender, and metadata. Sourced from Gong.
+      operationId: getEmailDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Gong email identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Email detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailDetail'
+        '404':
+          description: Email not found
+
+  # ── Briefs ──────────────────────────────────────────────────────
+  /v1/briefs/generate:
+    post:
+      tags:
+        - Briefs
+      summary: Generate an AI brief
+      description: |
+        Triggers server-side LLM generation of an account brief. This endpoint
+        exists in the API but is currently unused by the CS pipeline — enrichment
+        is handled client-side by the Cursor-based agent instead.
+      operationId: generateBrief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BriefGenerateRequest'
+      responses:
+        '200':
+          description: Generated brief
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefResponse'
+        '400':
+          description: Invalid request
+
+  # ── Commands ────────────────────────────────────────────────────
+  /v1/commands/outreachplan:
+    post:
+      tags:
+        - Commands
+      summary: Generate outreach plan
+      description: |
+        Server-side LLM command that generates an outreach plan for an account.
+        Exists in API but currently unused — outreach planning is handled client-side.
+      operationId: generateOutreachPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+      responses:
+        '200':
+          description: Generated outreach plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResponse'
+
+  /v1/commands/successplan:
+    post:
+      tags:
+        - Commands
+      summary: Generate success plan
+      description: Server-side LLM command for success plan generation. Currently unused by pipeline.
+      operationId: generateSuccessPlan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+      responses:
+        '200':
+          description: Generated success plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResponse'
+
+  /v1/commands/weeklybrief:
+    post:
+      tags:
+        - Commands
+      summary: Generate weekly brief
+      description: Server-side LLM command for weekly brief generation. Currently unused by pipeline.
+      operationId: generateWeeklyBrief
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+      responses:
+        '200':
+          description: Generated weekly brief
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResponse'
+
+  /v1/commands/summarizechat:
+    post:
+      tags:
+        - Commands
+      summary: Summarize chat interaction
+      description: Server-side LLM command for chat summarization. Currently unused by pipeline.
+      operationId: summarizeChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+      responses:
+        '200':
+          description: Chat summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResponse'
+
+  # ── Health ──────────────────────────────────────────────────────
+  /v1/health:
+    get:
+      tags:
+        - Health
+      summary: Service health check
+      description: Returns service health status, version, and dependency states.
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Bearer token obtained from `POST /v1/auth/service-token`.
+        Token TTL is 1 hour. No refresh mechanism — re-authenticate on expiry.
+
+  schemas:
+    # ── Auth ────────────────────────────────────────────────────
+    ServiceTokenRequest:
+      type: object
+      required:
+        - client_id
+        - client_secret
+      properties:
+        client_id:
+          type: string
+          description: OAuth client identifier
+        client_secret:
+          type: string
+          description: OAuth client secret
+          format: password
+
+    ServiceTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Bearer token for API access
+        token_type:
+          type: string
+          enum: [Bearer]
+        expires_in:
+          type: integer
+          description: Token TTL in seconds (3600 = 1 hour)
+          example: 3600
+        scope:
+          type: string
+          description: Space-separated list of granted scopes
+          example: "kepler:accounts:read kepler:salesforce:read kepler:communications:read"
+
+    # ── Accounts ────────────────────────────────────────────────
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Kepler account identifier
+        name:
+          type: string
+          description: Account name
+        salesforceId:
+          type: string
+          description: Linked Salesforce account ID
+        arr:
+          type: number
+          format: double
+          description: Annual Recurring Revenue
+        pipelineArr:
+          type: number
+          format: double
+          description: Pipeline ARR from open opportunities
+        csm:
+          type: string
+          description: Assigned Customer Success Manager
+        ae:
+          type: string
+          description: Assigned Account Executive
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ── Salesforce Accounts ─────────────────────────────────────
+    SalesforceAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Salesforce account ID
+        name:
+          type: string
+        arr:
+          type: number
+          format: double
+        pipelineArr:
+          type: number
+          format: double
+        csm:
+          type: string
+        ae:
+          type: string
+        industry:
+          type: string
+        tier:
+          type: string
+          description: Account tier classification
+
+    SalesforceAccountList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesforceAccount'
+        total:
+          type: integer
+
+    # ── Salesforce Teams ────────────────────────────────────────
+    SalesforceTeam:
+      type: object
+      properties:
+        teamId:
+          type: string
+          description: Postman team identifier
+        teamName:
+          type: string
+        plan:
+          type: string
+          description: Postman plan tier (Free, Basic, Professional, Enterprise)
+        licensePurchased:
+          type: integer
+        licenseUsed:
+          type: integer
+        occupancyPercent:
+          type: number
+          format: double
+          description: License utilization percentage
+        renewalDate:
+          type: string
+          format: date
+        autoRenew:
+          type: boolean
+        teamArr:
+          type: number
+          format: double
+          description: Per-team ARR
+
+    SalesforceTeamList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SalesforceTeam'
+        accountId:
+          type: string
+
+    # ── Salesforce Opportunities ────────────────────────────────
+    Opportunity:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Salesforce opportunity ID
+        name:
+          type: string
+        stage:
+          type: string
+          description: Sales stage
+        amount:
+          type: number
+          format: double
+        closeDate:
+          type: string
+          format: date
+        type:
+          type: string
+          description: Opportunity type (new business, renewal, expansion, etc.)
+        probability:
+          type: number
+          format: double
+          description: Win probability percentage
+
+    OpportunityList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opportunity'
+        accountId:
+          type: string
+
+    # ── Communications ──────────────────────────────────────────
+    CommunicationsSummary:
+      type: object
+      properties:
+        accountId:
+          type: string
+        periodDays:
+          type: integer
+          description: Lookback window used
+        calls:
+          type: array
+          items:
+            $ref: '#/components/schemas/CallSummary'
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailSummary'
+
+    CallSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Gong call identifier
+        subject:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        duration:
+          type: integer
+          description: Call duration in seconds
+        timestamp:
+          type: string
+          format: date-time
+        participants:
+          type: array
+          items:
+            type: string
+
+    CallTranscript:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Gong call identifier
+        subject:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        duration:
+          type: integer
+          description: Call duration in seconds
+        timestamp:
+          type: string
+          format: date-time
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/CallParticipant'
+        transcript:
+          type: array
+          description: Speaker-attributed verbatim transcript segments
+          items:
+            $ref: '#/components/schemas/TranscriptSegment'
+
+    CallParticipant:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          description: Participant role (host, attendee, external)
+
+    TranscriptSegment:
+      type: object
+      properties:
+        speaker:
+          type: string
+        text:
+          type: string
+        startTime:
+          type: number
+          format: double
+          description: Segment start time in seconds from call start
+        endTime:
+          type: number
+          format: double
+
+    EmailSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Gong email identifier
+        subject:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        sender:
+          type: string
+        sentDate:
+          type: string
+          format: date-time
+
+    EmailDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        subject:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        sender:
+          type: string
+          format: email
+        recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailRecipient'
+        sentDate:
+          type: string
+          format: date-time
+        body:
+          type: string
+          description: Full email body text
+
+    EmailRecipient:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        type:
+          type: string
+          enum: [to, cc, bcc]
+
+    # ── Briefs ──────────────────────────────────────────────────
+    BriefGenerateRequest:
+      type: object
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+        briefType:
+          type: string
+          enum: [executive, quarterly, health_check]
+          default: executive
+        includeCommunications:
+          type: boolean
+          default: true
+        lookbackDays:
+          type: integer
+          default: 90
+
+    BriefResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+        briefType:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        content:
+          type: string
+          description: AI-generated brief content in markdown format
+
+    # ── Commands ────────────────────────────────────────────────
+    CommandRequest:
+      type: object
+      required:
+        - accountId
+      properties:
+        accountId:
+          type: string
+        context:
+          type: string
+          description: Additional context or instructions for the command
+        options:
+          type: object
+          additionalProperties: true
+          description: Command-specific options
+
+    CommandResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+        command:
+          type: string
+          description: Command that was executed
+        generatedAt:
+          type: string
+          format: date-time
+        content:
+          type: string
+          description: AI-generated output in markdown format
+
+    # ── Health ──────────────────────────────────────────────────
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime:
+          type: string
+        dependencies:
+          type: object
+          properties:
+            salesforce:
+              type: string
+              enum: [connected, degraded, disconnected]
+            gong:
+              type: string
+              enum: [connected, degraded, disconnected]
+            llm:
+              type: string
+              enum: [connected, degraded, disconnected]
+
+    # ── Common ──────────────────────────────────────────────────
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

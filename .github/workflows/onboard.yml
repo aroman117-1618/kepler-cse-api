@@ -1,0 +1,33 @@
+name: Onboard to Postman
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'specs/**'
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  onboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Onboard Kepler API
+        uses: postman-cs/postman-api-onboarding-action@v0
+        with:
+          project-name: kepler-api
+          domain: cs-infrastructure
+          domain-code: KEP
+          spec-url: https://raw.githubusercontent.com/${{ github.repository }}/main/specs/kepler-api-openapi.yaml
+          environments-json: '["prod"]'
+          env-runtime-urls-json: '{"prod":"https://api.kepler.rip"}'
+          postman-api-key: ${{ secrets.POSTMAN_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-fallback-token: ${{ secrets.GH_FALLBACK_TOKEN }}
+          generate-ci-workflow: "true"
+          repo-write-mode: commit-and-push
